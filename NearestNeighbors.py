@@ -10,7 +10,35 @@ import pandas as pd
 import scipy as sp
 import numpy as np
 from sklearn import neighbors
+from sklearn.cross_validation import train_test_split
+from sklearn.metrics import accuracy_score
+from random import randint
+''' from https://kevinzakka.github.io/2016/07/13/k-nearest-neighbor/
+# loading libraries
+import pandas as pd
 
+# define column names
+names = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'class']
+
+# loading training data
+df = pd.read_csv('path/iris.data.txt', header=None, names=names)
+df.head()
+# ============================== R code ==============================
+# loading packages
+library(ggplot2)
+library(magrittr)
+
+# sepal width vs. sepal length
+iris %>%
+  ggplot(aes(x=Sepal.Length, y=Sepal.Width, color=Species)) +
+  geom_point()
+
+# petal width vs. petal length
+iris %>%
+  ggplot(aes(x=Petal.Length, y=Petal.Width, color=Species)) +
+  geom_point()
+# =====================================================================
+'''
 def getData(path):
     return pd.read_csv(path, sep=',', decimal='.', header=0, names=['PassengerId','Survived','Pclass','Name','Sex','Age',
                                                                        'SibSp','Parch','Ticket','Fare','Cabin','Embarked'])
@@ -21,10 +49,25 @@ if __name__=="__main__":
     binarySex = data['Sex'].apply(lambda x: 1 if x == 'male' else 0)
     print(binarySex.values)
     print(data.Survived)
-    X = [data['Survived'].values,binarySex.values]
-    y = [0,1]
-    trainNN = neighbors.KNeighborsClassifier(n_neighbors=2, weights='uniform', 
+    #cleanAge = data['Age'].apply(lambda x: 0 if (x >= 200 or x < 0 or x == 'NaN' or x is None) else x)
+    cleanAge = data['Age'].fillna(value=data.Age.mean())
+    sexClean = binarySex.fillna(value=(randint(0,1)))
+    print (cleanAge)
+    xDf = pd.DataFrame(sexClean, cleanAge)
+    print (xDf)
+    xDf = pd.DataFrame(xDf['Sex'].fillna(value=randint(0,1)),
+                                         cleanAge)
+    print (xDf)
+    #X = np.array(binarySex.values)
+    X = np.array(xDf)
+    #X = X.reshape(1, 2) #reshape for single feature
+    y = np.array(data['Survived'])
+    y = y.reshape(-1, 1) #reshape for single feature
+    X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.33,
+                                                        random_state=42)
+    trainNN = neighbors.KNeighborsClassifier(n_neighbors=3, weights='uniform', 
                                                  algorithm='auto')
-    trainNN.fit(X,y)
-    print(trainNN.predict([[1]]))
+    trainNN.fit(X_train,y_train)
+    pred = trainNN.predict(X_test)
+    print (accuracy_score(y_test, pred))
     print ("PANDAS!")
